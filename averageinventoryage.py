@@ -27,18 +27,45 @@ dates = list()
 for row in curs:
     dates.append(row[0])
 
-inventoryage = dict()  
-for date in dates:
-    curs.execute('''SELECT Trans,Quantity FROM Inventory WHERE Date = ?''',(date,))
+dailychange = list() 
+for i in range(len(dates)):
+    curs.execute('''SELECT Trans,Quantity FROM Inventory WHERE Date = ?''',(dates[i],))
     temp = list()
     for row in curs:
         if row[0] == 'P':
             temp.append(1*row[1])
         if row[0] == 'S':
             temp.append(-1*row[1])
-    datecomp = date.split('-')
+    datecomp = dates[i].split('-')
     date = datetime.date(int(datecomp[2]),int(datecomp[1]),int(datecomp[0]))
-    inventoryage[date] = sum(temp)
+    #dailychange[date] = sum(temp)
+    dates[i] = date
+    dailychange.append(sum(temp))
+
+
+positions = list()
+for i in range(len(dailychange)):
+    if (dailychange[i] > 0):
+        positions.append(i)
+
+inventorydate = dict()
+for i in range(len(positions)):
+    if positions[-1] == positions[i]:
+        inventorydate[dates[positions[i]]] = sum(dailychange[positions[i]:])
+    else:
+        inventorydate[dates[positions[i]]] = sum(dailychange[positions[i]:positions[i+1]])
+    
+referenceday  = datetime.date(2020,3,4)
+
+tempsum = 0
+total = 0
+for (date,value) in inventorydate.items():
+    tempsum += ((referenceday - date).days)*value
+    total += value
+
+averageage = tempsum/total
+
+print(averageage)
+
     
     
-conn.commit()
